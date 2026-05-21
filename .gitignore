@@ -1,0 +1,26 @@
+# Credentials & secrets
+.env
+*.pem
+*.key
+*_secret*
+*_credentials*
+credentials.*
+secrets.*
+*.tfvars
+!*.tfvars.example
+
+# Temp files
+*.tmp
+*.swp
+*.swo
+*~
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.sublime-*
+
+# Shell history
+.bash_history
+.zsh_history
