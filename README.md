@@ -21,6 +21,7 @@
 | [`setup_docker.sh`](#docker-setup) | Install Docker Engine from the official repo, optional build tooling | ✅ |
 | [`caddy/setup_caddy.sh`](#caddy-setup) | Build and install Caddy with Cloudflare DNS plugin, systemd service, hardened permissions | ✅ |
 | [`caddy/update_caddy.sh`](#caddy-update) | Rebuild latest Caddy, atomic binary swap, zero-downtime reload | ✅ |
+| [`backup/`](backup/README.md) | Weekly backup to Backblaze B2 with a write-only key; finds live MySQL, PostgreSQL and SQLite databases and dumps them consistently | ✅ |
 
 ---
 
