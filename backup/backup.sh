@@ -64,10 +64,14 @@ log() {
 }
 
 # Append a captured stderr file to the log, indented, minus tar's harmless note.
+# An if, not "[ -s ] && grep": when every line is filtered out grep returns 1,
+# and under set -e the last command of an && list that fails ends the script —
+# a clean tar run, whose only output is that note, aborted the backup.
 log_stderr() {
-    [ -s "$1" ] && grep -v -E "Removing leading .?/" "$1" | sed 's/^/    /' | tee -a "$RUN_LOG"
+    if [ -s "$1" ]; then
+        grep -v -E "Removing leading .?/" "$1" | sed 's/^/    /' | tee -a "$RUN_LOG" || true
+    fi
     rm -f "$1"
-    return 0
 }
 
 # pv only on a terminal: under cron its progress lines would fill the log.
