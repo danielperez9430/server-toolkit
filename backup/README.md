@@ -53,7 +53,7 @@ be inconsistent. So before the archive is built, the script finds databases by
 
 | Found as | How it's found | Dumped with | In the archive as |
 |---|---|---|---|
-| MySQL / MariaDB / Percona in Docker | image name; data dir bind-mounted inside the backed-up paths | `mysqldump --single-transaction --all-databases` | `dumps-*/<container>.sql.gz` |
+| MySQL / MariaDB / Percona in Docker | name of the image the container was created from (still found after its tag is pulled again); data dir bind-mounted inside the backed-up paths | `mysqldump --single-transaction --all-databases` | `dumps-*/<container>.sql.gz` |
 | PostgreSQL / PostGIS / TimescaleDB in Docker | same | `pg_dumpall` | `dumps-*/<container>.sql.gz` |
 | SQLite | any `*.sqlite`, `*.sqlite3`, `*.db`, `*.db3`, `*.sq3`, `*.s3db` inside the backed-up paths whose header says SQLite | SQLite's online backup API | `dumps-*/sqlite_<path_with_underscores>` |
 

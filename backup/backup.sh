@@ -211,7 +211,10 @@ dump_container() {  # dump_container <name> <engine> <out>
 
 # -- Databases in Docker: MySQL/MariaDB and PostgreSQL, found by image. --
 if command -v docker &>/dev/null; then
-    if ! containers=$(docker ps --format '{{.Names}} {{.Image}}' 2>&1); then
+    # Config.Image is the name the container was created from. docker ps shows only the
+    # image ID once that tag has been pulled again and points to a newer image, and the
+    # engine would then go unrecognised (and its database undumped).
+    if ! containers=$(docker ps -q | xargs -r docker inspect -f '{{.Name}} {{.Config.Image}}' 2>&1 | sed 's|^/||'); then
         log "WARNING: docker ps failed, no container database will be dumped: $containers"
         FAILED=1
         containers=""
