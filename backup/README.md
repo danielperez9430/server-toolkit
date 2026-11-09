@@ -65,6 +65,9 @@ process list.
 - A Docker database whose data lives **outside** the backed-up paths (for
   example in a named volume) is not in this backup, and the log says so. Set
   `DUMP_ALL_DATABASES=1` to dump those too.
+- `DUMP_SKIP=(<container> ...)` keeps named database containers out of this
+  backup entirely, e.g. one that already has its own encrypted backup: no dump,
+  and its raw files are left out if they are inside the backed-up paths.
 - MongoDB, CouchDB, Elasticsearch and the like are recognised but not dumped:
   the log says so, and their files are copied as they are.
 - If a dump fails, the error goes to the log, the database's raw files stay in
@@ -82,6 +85,7 @@ not writable by anyone else (the script refuses it otherwise). Example:
 SOURCES=(/var/www /etc/caddy/Caddyfile /srv/app)   # what to back up
 EXTRA_EXCLUDES=(/var/www/blog/content/logs)        # more paths to leave out
 DUMP_ALL_DATABASES=1                               # also dump DBs outside SOURCES
+DUMP_SKIP=(app-db-1)                               # never dump these containers
 DUMP_TIMEOUT=2h                                    # per database
 HEALTHCHECK_URL="https://hc-ping.com/<uuid>"       # instead of editing the script
 ```

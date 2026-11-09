@@ -25,11 +25,15 @@ HEALTHCHECK_URL=""   # optional — fill in uuid from healthchecks.io
 #   SOURCES=(/var/www /etc/caddy/Caddyfile /srv/app)
 #   EXTRA_EXCLUDES=(/var/www/ghost/content/logs)
 #   DUMP_ALL_DATABASES=1
+#   DUMP_SKIP=(app-db-1)
 SOURCES=(/var/www /etc/caddy/Caddyfile)
 EXTRA_EXCLUDES=()
 # Databases in Docker whose data lives OUTSIDE SOURCES aren't in this backup
 # at all. 0 just says so in the log; 1 dumps them too.
 DUMP_ALL_DATABASES=0
+# Database containers (by name) never dumped here, e.g. one that already has its own
+# encrypted backup. If their raw files are inside SOURCES they are left out too.
+DUMP_SKIP=()
 DUMP_TIMEOUT=2h
 
 if [ "$(id -u)" -ne 0 ]; then
@@ -236,6 +240,13 @@ if command -v docker &>/dev/null; then
             | awk -F'|' -v d="$datadir" '$2 == d || index($2, d "/") == 1 {print $1; exit}') || true
         inside=0
         [ -n "$src" ] && in_sources "$src" && inside=1
+        skip=0
+        for s in "${DUMP_SKIP[@]}"; do [ "$s" = "$name" ] && skip=1; done
+        if [ "$skip" = 1 ]; then
+            [ "$inside" = 1 ] && EXCLUDES+=("--exclude=$src")
+            log "  $name: $engine, skipped (DUMP_SKIP)${src:+; its raw files in $src are left out too}"
+            continue
+        fi
         if [ "$inside" = 0 ] && [ "$DUMP_ALL_DATABASES" != 1 ]; then
             log "  $name: $engine with data outside SOURCES — NOT in this backup (DUMP_ALL_DATABASES=1 adds it)"
             continue
