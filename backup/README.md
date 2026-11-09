@@ -84,7 +84,24 @@ EXTRA_EXCLUDES=(/var/www/blog/content/logs)        # more paths to leave out
 DUMP_ALL_DATABASES=1                               # also dump DBs outside SOURCES
 DUMP_TIMEOUT=2h                                    # per database
 HEALTHCHECK_URL="https://hc-ping.com/<uuid>"       # instead of editing the script
+AGE_RECIPIENTS_FILE=/etc/backup-age-recipients.txt  # encrypt the archive (see below)
 ```
+
+### Encryption (optional)
+
+With `AGE_RECIPIENTS_FILE` set, the archive is encrypted with [age](https://age-encryption.org)
+before it leaves the server and uploaded as `backup-<date>.tar.gz.age`. The file holds public
+keys (`age1…`), one per line; only they are on the server, so neither the server nor the
+bucket can read the backups. Keep the private keys offline (a password manager, and ideally a
+second key as a spare: every recipient can decrypt on its own). Without a private key the
+backups cannot be restored.
+
+```bash
+age-keygen -o backup-key.txt                       # on your machine, never on the server
+grep '^# public key' backup-key.txt | cut -d' ' -f4 | sudo tee /etc/backup-age-recipients.txt
+```
+
+The local dumps written before the archive is built stay on the server only during the run.
 
 ### Check before it runs
 
@@ -189,6 +206,8 @@ rclone copy b2-full:server-backups/backup-2026-06-01_031701.tar.gz .
 
 # Extract to inspect
 tar -xzf backup-2026-06-01_031701.tar.gz -C /tmp/restore
+# Encrypted (.age): decrypt with a private key, then extract
+age -d -i backup-key.txt backup-2026-06-01_031701.tar.gz.age | tar -xz -C /tmp/restore
 
 # Restore live
 sudo tar -xzf backup-2026-06-01_031701.tar.gz -C /
