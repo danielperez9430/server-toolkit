@@ -35,6 +35,9 @@ DUMP_ALL_DATABASES=0
 # encrypted backup. If their raw files are inside SOURCES they are left out too.
 DUMP_SKIP=()
 DUMP_TIMEOUT=2h
+# Optional: encrypt the archive with age before it leaves the server. A file with one
+# public key (age1…) per line; the private keys to restore never go on the server.
+AGE_RECIPIENTS_FILE=""
 
 if [ "$(id -u)" -ne 0 ]; then
     echo "Must run as root: it reads every app's files and talks to Docker." >&2
@@ -52,7 +55,7 @@ if [ -e "$CONF" ]; then
     . "$CONF"
 fi
 
-BACKUP_NAME="backup-$TIMESTAMP.tar.gz"
+BACKUP_NAME="backup-$TIMESTAMP.tar.gz${AGE_RECIPIENTS_FILE:+.age}"
 LOCAL_PATH="$LOCAL_DIR/$BACKUP_NAME"
 DUMP_DIR="$LOCAL_DIR/dumps-$TIMESTAMP"
 TAR_ERR=""
@@ -134,6 +137,11 @@ check_pipeline() {  # check_pipeline <what> <status...>
     return 0
 }
 
+# Encrypts with age when AGE_RECIPIENTS_FILE is set; a plain pass-through otherwise.
+encrypt() {
+    if [ -n "$AGE_RECIPIENTS_FILE" ]; then age -R "$AGE_RECIPIENTS_FILE"; else cat; fi
+}
+
 # Is this path inside one of the SOURCES?
 in_sources() {
     local p=$1 s
@@ -149,6 +157,21 @@ ping_hc /start
 if ! command -v rclone &>/dev/null; then
     log "FATAL: rclone not found. Install it: curl https://rclone.org/install.sh | sudo bash"
     exit 1
+fi
+
+# ---- age, when encryption is on: fail now rather than after the dumps ----
+if [ -n "$AGE_RECIPIENTS_FILE" ]; then
+    if ! command -v age &>/dev/null; then
+        log "FATAL: AGE_RECIPIENTS_FILE is set but age is not installed (apt install age)"
+        exit 1
+    fi
+    if ! age -R "$AGE_RECIPIENTS_FILE" </dev/null >/dev/null 2>"$RUN_LOG.age"; then
+        log "FATAL: cannot encrypt to $AGE_RECIPIENTS_FILE: $(tr '\n' ' ' < "$RUN_LOG.age")"
+        rm -f "$RUN_LOG.age"
+        exit 1
+    fi
+    rm -f "$RUN_LOG.age"
+    log "Encrypting with age to $(grep -c '^age1' "$AGE_RECIPIENTS_FILE") recipient(s) from $AGE_RECIPIENTS_FILE"
 fi
 
 # ---- Only the SOURCES that exist: a server without Caddy shouldn't fail ----
@@ -335,6 +358,7 @@ if [ "$AVAILABLE_KB" -gt "$((ESTIMATED_KB * 2))" ]; then
     # tar → pv (progress) → file
     set +e
     tar -czf - "${EXCLUDES[@]}" "${SOURCES[@]}" 2>"$TAR_ERR" \
+        | encrypt \
         | maybe_pv "$((ESTIMATED_KB * 1024))" \
         > "$LOCAL_PATH"
     st=("${PIPESTATUS[@]}")
@@ -360,6 +384,7 @@ else
 
     set +e
     tar -czf - "${EXCLUDES[@]}" "${SOURCES[@]}" 2>"$TAR_ERR" \
+        | encrypt \
         | rclone rcat "$REMOTE/$BACKUP_NAME"
     st=("${PIPESTATUS[@]}")
     set -e
