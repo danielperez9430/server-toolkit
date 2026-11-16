@@ -1,4 +1,4 @@
-# 🧰 Server Toolkit
+<p align="center"><img src="docs/banner.png" alt="server-toolkit" width="720"></p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/shell-bash-4EAA25?style=for-the-badge&logo=gnu-bash&logoColor=white" alt="Bash">

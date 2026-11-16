@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="server-toolkit">
+  <style>.ink{stroke:#1c1b1b}@media (prefers-color-scheme:dark){.ink{stroke:#fcf9f8}}</style>
+  <path class="ink" d="M44 52 H212 V116 H44 Z M44 140 H212 V204 H44 Z" fill="none" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M170 84 H178 M170 172 H178" fill="none" stroke="#ff3e3e" stroke-width="20" stroke-linecap="round"/>
+</svg>
